@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <bitset>
 // ("",  '.') -> [""]
 // ("11", '.') -> ["11"]
 // ("..", '.') -> ["", "", ""]
@@ -72,41 +73,99 @@ std::vector<std::string> split(const std::string &str, char d)
     return r;
 }
 
+
+class ip_addr {
+public:
+    ip_addr() = default;
+
+    [[nodiscard("reason")]] bool from_string(const std::string &ip_str) //change to string_view
+    {
+            /*for(std::size_t i = 0; i < 4; i++) {
+                if (lhs.b0 != std::stoi(rhs[i]))
+            }*/
+
+//        b0 = std::stoi(i)
+
+        auto splitted = split(ip_str, '.');
+        if(splitted.size() != 4)
+            return false;
+
+        bytes.b0 = std::stoi(splitted[0]);
+        bytes.b1 = std::stoi(splitted[1]);
+        bytes.b2 = std::stoi(splitted[2]);
+        bytes.b3 = std::stoi(splitted[3]);
+
+        return true;
+    }
+
+    friend std::ostream& operator<<(std::ostream& s, const ip_addr& value);
+
+    std::string to_string()
+    {
+        std::ostringstream ss;
+        ss << *this;
+        return ss.str();
+    }
+
+public:
+    //std::byte
+    struct ip_4bytes{
+        unsigned char b3;
+        unsigned char b2;
+        unsigned char b1;
+        unsigned char b0;
+    };
+    union {
+        uint32_t ip32 = 0;
+        ip_4bytes bytes;
+    };
+};
+
+std::ostream& operator<<(std::ostream& s, const ip_addr& value)
+{
+    s << static_cast<unsigned>(value.bytes.b0)<<'.'
+      << static_cast<unsigned>(value.bytes.b1)<<'.'
+      << static_cast<unsigned>(value.bytes.b2)<<'.'
+      << static_cast<unsigned>(value.bytes.b3);
+    return s;
+}
+
+bool operator<(const ip_addr& lhs, const ip_addr& rhs)
+{
+//    for(std::size_t i = 0; i < 4; i++)
+//    {
+//        if(lhs.b0 != std::stoi(rhs[i]))
+//            return std::stoi(lhs[i]) > std::stoi(rhs[i]);
+//    }
+    return lhs.ip32 < rhs.ip32;
+}
+
+
 int main(int argc, char const *argv[])
 {
+
     try
     {
         auto lines = read_file_lines("ip_filter.tsv");
-        std::vector<std::vector<std::string> > ip_pool;
+        std::vector<ip_addr> ip_pool;
 
         for(auto&& line : lines)
         {
             std::vector<std::string> v = split(line, '\t');
-            ip_pool.push_back(split(v.at(0), '.'));
+            ip_addr ip;
+            if(!ip.from_string(v.at(0)))
+            {
+                std::clog<<v.at(0)<<" is not ip"<<std::endl;
+                continue;
+            }
+
+            ip_pool.push_back(ip);
         }
 
-        // TODO reverse lexicographically sort
-
-        std::sort(std::begin(ip_pool), std::end(ip_pool), [](auto&& lhs, auto&& rhs){
-            for(std::size_t i = 0; i < 4; i++)
-            {
-                if(std::stoi(lhs[i]) != std::stoi(rhs[i]))
-                    return std::stoi(lhs[i]) > std::stoi(rhs[i]);
-            }
-            return false;
-        });
-        for(std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.begin(); ip != ip_pool.end(); ++ip)
+        std::sort(std::begin(ip_pool), std::end(ip_pool));
+        for(auto ip : ip_pool)
         {
-            for(std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-            {
-                if (ip_part != ip->cbegin())
-                {
-                    std::cout << ".";
-
-                }
-                std::cout << *ip_part;
-            }
-            std::cout << std::endl;
+            std::cout << ip<<std::endl;
         }
 
         // 222.173.235.246
