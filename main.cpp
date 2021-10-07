@@ -14,68 +14,6 @@
 // (".11", '.') -> ["", "11"]
 // ("11.22", '.') -> ["11", "22"]
 
-
-std::string read_entire_file(const std::string& filename)
-{
-    std::ifstream file(filename.c_str(), std::ios_base::in);
-    if ( !file.good() )
-    {
-        std::clog<< "Can't open file \"" << filename << "\"";
-        return std::string();
-    }
-
-    std::string contents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    if ( file.fail() )
-    {
-        std::clog<<"Can't read file \"" << filename << "\" contents";
-        return std::string();
-    }
-
-    return contents;
-}
-
-std::vector<std::string> split_lines(const std::string& content)
-{
-    std::vector<std::string> ret;
-    std::istringstream input(content);
-    std::string line;
-    while (std::getline(input, line)) {
-        try
-        {
-            ret.push_back(line);
-        }
-        catch (const std::exception& e)
-        {
-//            std::cerr<<LOCATION<< e.what()<<std::endl;
-        }
-    }
-
-    return ret;
-}
-
-
-/*
-std::vector<std::string> read_file_lines(const std::string& filename)
-{
-    const auto content = read_entire_file(filename);
-    std::vector<std::string> ret;
-    std::istringstream input(content);
-    std::string line;
-    while (std::getline(input, line)) {
-        try
-        {
-            ret.push_back(line);
-        }
-        catch (const std::exception& e)
-        {
-//            std::cerr<<LOCATION<< e.what()<<std::endl;
-        }
-    }
-
-    return ret;
-}
-*/
-
 std::vector<std::string> split(const std::string &str, char d)
 {
     std::vector<std::string> r;
@@ -195,14 +133,10 @@ int main(int argc, char const *argv[])
 {
     try
     {
-        std::string in;
-        std::cin>>in;
-
-        auto lines = split_lines(in);
-
         std::vector<ip_addr> ip_pool;
 
-        for(auto&& line : lines)
+        std::vector<std::string> lines;
+        for(std::string line; std::getline(std::cin, line);)
         {
             std::vector<std::string> v = split(line, '\t');
             ip_addr ip;
