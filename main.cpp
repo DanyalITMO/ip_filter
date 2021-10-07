@@ -34,6 +34,27 @@ std::string read_entire_file(const std::string& filename)
     return contents;
 }
 
+std::vector<std::string> split_lines(const std::string& content)
+{
+    std::vector<std::string> ret;
+    std::istringstream input(content);
+    std::string line;
+    while (std::getline(input, line)) {
+        try
+        {
+            ret.push_back(line);
+        }
+        catch (const std::exception& e)
+        {
+//            std::cerr<<LOCATION<< e.what()<<std::endl;
+        }
+    }
+
+    return ret;
+}
+
+
+/*
 std::vector<std::string> read_file_lines(const std::string& filename)
 {
     const auto content = read_entire_file(filename);
@@ -53,6 +74,7 @@ std::vector<std::string> read_file_lines(const std::string& filename)
 
     return ret;
 }
+*/
 
 std::vector<std::string> split(const std::string &str, char d)
 {
@@ -171,10 +193,13 @@ std::vector<ip_addr> filter_any(const std::vector<ip_addr>& ips, unsigned char b
 
 int main(int argc, char const *argv[])
 {
-
     try
     {
-        auto lines = read_file_lines("ip_filter.tsv");
+        std::string in;
+        std::cin>>in;
+
+        auto lines = split_lines(in);
+
         std::vector<ip_addr> ip_pool;
 
         for(auto&& line : lines)
@@ -203,7 +228,6 @@ int main(int argc, char const *argv[])
         {
             std::cout << ip<<std::endl;
         }
-
 
         auto filtered_by_first_second = filter(ip_pool, 46, 70);
         std::sort(std::begin(filtered_by_first_second), std::end(filtered_by_first_second), std::greater<>());
