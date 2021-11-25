@@ -1,22 +1,13 @@
-#include <cassert>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <bitset>
-// ("",  '.') -> [""]
-// ("11", '.') -> ["11"]
-// ("..", '.') -> ["", "", ""]
-// ("11.", '.') -> ["11", ""]
-// (".11", '.') -> ["", "11"]
-// ("11.22", '.') -> ["11", "22"]
+#include <charconv>
 
-std::vector<std::string> split(const std::string &str, char d)
+std::vector<std::string_view> split(const std::string_view str, char d)
 {
-    std::vector<std::string> r;
+    std::vector<std::string_view> r;
 
     std::string::size_type start = 0;
     std::string::size_type stop = str.find_first_of(d);
@@ -33,21 +24,29 @@ std::vector<std::string> split(const std::string &str, char d)
     return r;
 }
 
-
 class ip_addr {
 public:
     ip_addr() = default;
 
-    [[nodiscard("reason")]] bool from_string(const std::string &ip_str) //change to string_view
+    [[nodiscard("reason")]] bool from_string(std::string_view ip_str)
     {
         auto splitted = split(ip_str, '.');
         if(splitted.size() != 4)
             return false;
 
-        b0 = std::stoi(splitted[0]);
-        b1 = std::stoi(splitted[1]);
-        b2 = std::stoi(splitted[2]);
-        b3 = std::stoi(splitted[3]);
+        auto converter = [](std::string_view str)-> int{
+            int number;
+            auto result = std::from_chars(str.data(), str.data() + str.size(), number);
+            if (result.ec == std::errc::invalid_argument) {
+                throw std::logic_error{"Could not convert."};
+            }
+            return number;
+        };
+
+        b0 = {static_cast<std::byte>(converter(splitted[0]))};
+        b1 = {static_cast<std::byte>(converter(splitted[1]))};
+        b2 = {static_cast<std::byte>(converter(splitted[2]))};
+        b3 = {static_cast<std::byte>(converter(splitted[3]))};
 
         return true;
     }
@@ -62,15 +61,14 @@ public:
     }
 
 public:
-    //std::byte
-    //std::variant
+    //NOTE std::variant выглядит здесь как overengineering , потому что type safety не нужен, типы в union совместимы
         union {
         uint32_t ip32 = 0;
             struct {
-                unsigned char b3;
-                unsigned char b2;
-                unsigned char b1;
-                unsigned char b0;
+                std::byte b3;
+                std::byte b2;
+                std::byte b1;
+                std::byte b0;
             };
         };
 };
@@ -108,21 +106,21 @@ std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, const std::function
 }
 
 
-std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, unsigned char first)
+std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, std::byte first)
 {
     return filter(ips, [first](const ip_addr& ip){
         return ip.b0 == first;
     });
 }
 
-std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, unsigned char first, unsigned char second)
+std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, std::byte first, std::byte second)
 {
     return filter(ips, [first, second](const ip_addr& ip){
         return (ip.b0 == first && ip.b1 == second);
     });
 }
 
-std::vector<ip_addr> filter_any(const std::vector<ip_addr>& ips, unsigned char byte)
+std::vector<ip_addr> filter_any(const std::vector<ip_addr>& ips, std::byte byte)
 {
     return filter(ips, [byte](const ip_addr& ip){
         return (ip.b0 == byte || ip.b1 == byte || ip.b2 == byte || ip.b3 == byte);
@@ -138,7 +136,7 @@ int main(int argc, char const *argv[])
         std::vector<std::string> lines;
         for(std::string line; std::getline(std::cin, line);)
         {
-            std::vector<std::string> v = split(line, '\t');
+            std::vector<std::string_view> v = split(line, '\t');
             ip_addr ip;
             if(!ip.from_string(v.at(0)))
             {
@@ -155,7 +153,7 @@ int main(int argc, char const *argv[])
             std::cout << ip<<std::endl;
         }
 
-        auto filtered_by_first = filter(ip_pool, 1);
+        auto filtered_by_first = filter(ip_pool, std::byte{1});
         std::sort(std::begin(filtered_by_first), std::end(filtered_by_first), std::greater<>());
 
         for(auto ip : filtered_by_first)
@@ -163,7 +161,7 @@ int main(int argc, char const *argv[])
             std::cout << ip<<std::endl;
         }
 
-        auto filtered_by_first_second = filter(ip_pool, 46, 70);
+        auto filtered_by_first_second = filter(ip_pool, std::byte{46}, std::byte{70});
         std::sort(std::begin(filtered_by_first_second), std::end(filtered_by_first_second), std::greater<>());
 
         for(auto ip : filtered_by_first_second)
@@ -171,7 +169,7 @@ int main(int argc, char const *argv[])
             std::cout << ip<<std::endl;
         }
 
-        auto filtered_any = filter_any(ip_pool, 46);
+        auto filtered_any = filter_any(ip_pool, std::byte{46});
         std::sort(std::begin(filtered_any), std::end(filtered_any), std::greater<>());
 
         for(auto ip : filtered_any)
