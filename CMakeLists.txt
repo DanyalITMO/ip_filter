@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.17)
-project(filter_ip)
+project(ip_filter)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(filter_ip main.cpp)
-target_compile_options(filter_ip PRIVATE -Werror)
+add_executable(${PROJECT_NAME} main.cpp)
+target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+include(CPack)

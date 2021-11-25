@@ -24,11 +24,11 @@ std::vector<std::string_view> split(const std::string_view str, char d)
     return r;
 }
 
-class ip_addr {
+class IPV4 {
 public:
-    ip_addr() = default;
+    IPV4() = default;
 
-    [[nodiscard("reason")]] bool from_string(std::string_view ip_str)
+    [[nodiscard]] bool from_string(std::string_view ip_str)
     {
         auto splitted = split(ip_str, '.');
         if(splitted.size() != 4)
@@ -51,7 +51,7 @@ public:
         return true;
     }
 
-    friend std::ostream& operator<<(std::ostream& s, const ip_addr& value);
+    friend std::ostream& operator<<(std::ostream& s, const IPV4& value);
 
     std::string to_string()
     {
@@ -73,7 +73,7 @@ public:
         };
 };
 
-std::ostream& operator<<(std::ostream& s, const ip_addr& value)
+std::ostream& operator<<(std::ostream& s, const IPV4& value)
 {
     s << static_cast<unsigned>(value.b0)<<'.'
       << static_cast<unsigned>(value.b1)<<'.'
@@ -82,19 +82,19 @@ std::ostream& operator<<(std::ostream& s, const ip_addr& value)
     return s;
 }
 
-bool operator<(const ip_addr& lhs, const ip_addr& rhs)
+bool operator<(const IPV4& lhs, const IPV4& rhs)
 {
     return lhs.ip32 < rhs.ip32;
 }
 
-bool operator>(const ip_addr& lhs, const ip_addr& rhs)
+bool operator>(const IPV4& lhs, const IPV4& rhs)
 {
     return lhs.ip32 > rhs.ip32;
 }
 
-std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, const std::function<bool(ip_addr)>& predicat)
+std::vector<IPV4> filter(const std::vector<IPV4>& ips, const std::function<bool(IPV4)>& predicat)
 {
-    std::vector<ip_addr> filtered_ip;
+    std::vector<IPV4> filtered_ip;
     for(auto&& ip : ips)
     {
         if(predicat(ip))
@@ -106,23 +106,23 @@ std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, const std::function
 }
 
 
-std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, std::byte first)
+std::vector<IPV4> filter(const std::vector<IPV4>& ips, std::byte first)
 {
-    return filter(ips, [first](const ip_addr& ip){
+    return filter(ips, [first](const IPV4& ip){
         return ip.b0 == first;
     });
 }
 
-std::vector<ip_addr> filter(const std::vector<ip_addr>& ips, std::byte first, std::byte second)
+std::vector<IPV4> filter(const std::vector<IPV4>& ips, std::byte first, std::byte second)
 {
-    return filter(ips, [first, second](const ip_addr& ip){
+    return filter(ips, [first, second](const IPV4& ip){
         return (ip.b0 == first && ip.b1 == second);
     });
 }
 
-std::vector<ip_addr> filter_any(const std::vector<ip_addr>& ips, std::byte byte)
+std::vector<IPV4> filter_any(const std::vector<IPV4>& ips, std::byte byte)
 {
-    return filter(ips, [byte](const ip_addr& ip){
+    return filter(ips, [byte](const IPV4& ip){
         return (ip.b0 == byte || ip.b1 == byte || ip.b2 == byte || ip.b3 == byte);
     });
 }
@@ -131,13 +131,13 @@ int main(int argc, char const *argv[])
 {
     try
     {
-        std::vector<ip_addr> ip_pool;
+        std::vector<IPV4> ip_pool;
 
         std::vector<std::string> lines;
         for(std::string line; std::getline(std::cin, line);)
         {
             std::vector<std::string_view> v = split(line, '\t');
-            ip_addr ip;
+            IPV4 ip;
             if(!ip.from_string(v.at(0)))
             {
                 std::clog<<v.at(0)<<" is not ip"<<std::endl;
